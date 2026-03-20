@@ -1,0 +1,17 @@
+{
+  "name": "gcp-scraper-service",
+  "version": "1.0.0",
+  "description": "Bid portal scraper service for Georgia Concrete Plus",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "playwright install chromium --with-deps"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "playwright": "^1.41.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
