@@ -7,8 +7,17 @@ app.use(express.json());
 // Simple API key check — set SCRAPER_API_KEY in Railway environment variables
 const API_KEY = process.env.SCRAPER_API_KEY;
 
+// Portal credentials — stored securely in Railway environment variables
+// n8n never needs to send passwords
+const PORTAL_CREDENTIALS = {
+  bc: {
+    username: process.env.BC_USERNAME,
+    password: process.env.BC_PASSWORD
+  }
+};
+
 function checkApiKey(req, res, next) {
-  if (!API_KEY) return next(); // No key configured — skip check (not recommended for production)
+  if (!API_KEY) return next();
   const provided = req.headers['x-api-key'];
   if (provided !== API_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -23,15 +32,21 @@ app.get('/health', (req, res) => {
 
 // Main scrape endpoint — n8n calls this via HTTP Request node
 // POST /scrape
-// Body: { "portal": "bc", "url": "https://...", "credentials": { "username": "...", "password": "..." } }
+// Body: { "portal": "bc", "url": "https://..." }
+// Credentials are read from Railway environment variables, not from the request
 app.post('/scrape', checkApiKey, async (req, res) => {
-  const { portal, url, credentials } = req.body;
+  const { portal, url } = req.body;
 
-  if (!portal || !url || !credentials?.username || !credentials?.password) {
+  if (!portal || !url) {
     return res.status(400).json({
       error: 'Missing required fields',
-      required: ['portal', 'url', 'credentials.username', 'credentials.password']
+      required: ['portal', 'url']
     });
+  }
+
+  const credentials = PORTAL_CREDENTIALS[portal];
+  if (!credentials?.username || !credentials?.password) {
+    return res.status(500).json({ error: `Credentials not configured for portal: ${portal}` });
   }
 
   console.log(`[${new Date().toISOString()}] Scraping portal=${portal} url=${url}`);
